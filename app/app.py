@@ -5,18 +5,15 @@ import joblib
 import time
 import os
 
-
-# ---- Page setup ----
+# ---- Page configuration ----
 st.set_page_config(
     page_title="AutoInsight AI",
-    page_icon="🚗",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-
 # ---- Data & model loading ----
-# Cached loading keeps the app fast and avoids reloading models repeatedly
+# Using cached loading so app doesn't reload models on every interaction
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -40,26 +37,12 @@ def load_models():
 df = load_data()
 reg_model, clf_model = load_models()
 
-
-# ---- Custom styling ----
+# ---- Global styling ----
 st.markdown("""
 <style>
 .main {
     background: linear-gradient(180deg,#060b16,#02050b);
     color:white;
-}
-
-.nav-btn button {
-    background:#0f172a;
-    border:1px solid #334155;
-    border-radius:10px;
-    padding:10px 20px;
-    color:white;
-    font-weight:600;
-}
-
-.nav-btn button:hover {
-    border-color:#22c55e;
 }
 
 .price {
@@ -85,11 +68,27 @@ st.markdown("""
     border:1px solid #1e293b;
     text-align:center;
 }
+
+/* Footer styling */
+.footer {
+    width:100%;
+    padding:12px 40px;
+    color:#94a3b8;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.footer a {
+    color:#22c55e;
+    text-decoration:none;
+    margin:0 8px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-
-# ---- Navigation ----
+# ---- Navigation state ----
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -106,8 +105,7 @@ with col2:
         if st.button("🚗 Price Predictor"):
             st.session_state.page = "predict"
 
-
-# ---- Home page ----
+# ---- HOME PAGE ----
 if st.session_state.page == "home":
 
     st.markdown(
@@ -116,9 +114,7 @@ if st.session_state.page == "home":
     )
 
     st.markdown(
-        "<p style='text-align:center;color:#94a3b8;'>"
-        "Used Car Price Prediction & Market Segmentation using Machine Learning"
-        "</p>",
+        "<p style='text-align:center;color:#94a3b8;'>Machine Learning powered vehicle valuation and market intelligence platform</p>",
         unsafe_allow_html=True
     )
 
@@ -145,31 +141,13 @@ if st.session_state.page == "home":
     st.markdown("### 🚀 What this app does")
 
     st.markdown("""
-Predict realistic used car prices using trained ML models  
-Classify vehicles into Budget / Midrange / Premium segments  
-Provide confidence estimation based on model performance  
-Explore the dataset used for training
-""")
+    Predict realistic used car prices using trained ML models  
+    Classify vehicles into Budget / Midrange / Premium segments  
+    Provide confidence estimation based on model performance  
+    Explore the dataset used for training
+    """)
 
-    # ---- About / Author section ----
-    st.markdown("---")
-
-    st.markdown("### 👨‍💻 About the Author")
-
-    st.markdown("""
-**Saksham Malhotra**
-
-Machine Learning & Data Science student focused on building practical AI applications and data-driven systems.  
-This project demonstrates an end-to-end ML workflow — from data preprocessing and model training to deployment using Streamlit.
-
-📫 **Connect with me:**
-
-- GitHub: https://github.com/Saksham2404  
-- LinkedIn: https://www.linkedin.com/in/saksham02
-""")
-
-
-# ---- Dataset explorer ----
+# ---- DATA EXPLORER PAGE ----
 elif st.session_state.page == "eda":
 
     st.header("📊 Dataset Explorer")
@@ -184,8 +162,7 @@ elif st.session_state.page == "eda":
 
     st.dataframe(df.describe())
 
-
-# ---- Prediction page ----
+# ---- PREDICTION PAGE ----
 elif st.session_state.page == "predict":
 
     st.header("🚗 Car Price Prediction")
@@ -237,7 +214,6 @@ elif st.session_state.page == "predict":
 
         predict_btn = st.button("Predict Price")
 
-    # ---- Prediction output ----
     with col2:
 
         if predict_btn:
@@ -273,23 +249,36 @@ elif st.session_state.page == "predict":
                 )
                 time.sleep(0.015)
 
-            with st.container():
+            st.markdown(
+                f"<div class='badge'>{category.upper()}</div>",
+                unsafe_allow_html=True
+            )
 
-                st.markdown(
-                    f"<div class='badge'>{category.upper()}</div>",
-                    unsafe_allow_html=True
-                )
+            st.caption(f"Model confidence: {confidence}%")
+            st.progress(confidence / 100)
 
-                st.write("")
-                st.caption(f"Estimated prediction confidence: {confidence}%")
+            st.markdown(
+                f"""
+                <div style='color:#22c55e;font-weight:600;margin-top:10px;'>
+                    Expected price range: ${lower:,} — ${upper:,}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
-                st.progress(confidence / 100)
+# ---- FOOTER (visible on all pages) ----
+st.markdown("---")
 
-                st.markdown(
-                    f"""
-                    <div style='color:#22c55e;font-weight:600;margin-top:10px;'>
-                        Expected price range: ${lower:,} — ${upper:,}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+st.markdown(
+    """
+    <div class="footer">
+        <div>Built by <b>Saksham Malhotra</b></div>
+        <div>
+            <a href="https://www.linkedin.com/in/saksham02" target="_blank">LinkedIn</a> |
+            <a href="https://github.com/Saksham2404" target="_blank">GitHub</a>
+        </div>
+        <div>© 2026 AutoInsight AI</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
