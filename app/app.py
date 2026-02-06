@@ -163,10 +163,10 @@ if st.session_state.page == "home":
     st.markdown("### 🚀 What this app does")
 
     st.markdown("""
-    ✅ Predict realistic used car prices using trained ML models  
-    ✅ Classify vehicles into Budget / Midrange / Premium segments  
-    ✅ Provide confidence estimation based on model performance  
-    ✅ Explore the dataset used for training
+     Predict realistic used car prices using trained ML models  
+     Classify vehicles into Budget / Midrange / Premium segments  
+     Provide confidence estimation based on model performance  
+     Explore the dataset used for training
     """)
 
 
