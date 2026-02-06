@@ -1,17 +1,3 @@
-"""
-AutoInsight AI
---------------
-
-Streamlit application for used car price prediction and market segmentation.
-
-The app uses trained ML pipelines to:
-- predict used car prices
-- classify cars into budget / midrange / premium segments
-- allow quick exploration of the dataset used during training
-
-Author: Saksham Malhotra
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -20,18 +6,18 @@ import time
 import os
 
 
-# basic page setup
-# keeping layout wide since dashboard elements need space
+# ---- Page setup ----
 st.set_page_config(
     page_title="AutoInsight AI",
+    page_icon="🚗",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 
-# ---- data & model loading ----
-# models are cached so they are loaded only once
-# otherwise Streamlit reloads them on every interaction
+# ---- Data & model loading ----
+# Cached loading keeps the app fast and avoids reloading models repeatedly
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 DATA_PATH = os.path.join(BASE_DIR, "data", "used_cars_sample.csv")
@@ -55,8 +41,7 @@ df = load_data()
 reg_model, clf_model = load_models()
 
 
-# ---- small styling block ----
-# custom css for dark theme and cleaner UI
+# ---- Custom styling ----
 st.markdown("""
 <style>
 .main {
@@ -104,12 +89,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ---- simple navigation handling ----
-# using session_state so page doesn't reset on interaction
+# ---- Navigation ----
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-col1, col2, col3 = st.columns([3, 4, 3])
+col1, col2, col3 = st.columns([3,4,3])
 with col2:
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -123,8 +107,7 @@ with col2:
             st.session_state.page = "predict"
 
 
-# ---- home page ----
-# quick overview + summary stats
+# ---- Home page ----
 if st.session_state.page == "home":
 
     st.markdown(
@@ -133,7 +116,9 @@ if st.session_state.page == "home":
     )
 
     st.markdown(
-        "<p style='text-align:center;color:#94a3b8;'>Machine Learning powered vehicle valuation and market intelligence platform</p>",
+        "<p style='text-align:center;color:#94a3b8;'>"
+        "Used Car Price Prediction & Market Segmentation using Machine Learning"
+        "</p>",
         unsafe_allow_html=True
     )
 
@@ -144,34 +129,47 @@ if st.session_state.page == "home":
     with c1:
         st.markdown(
             f"<div class='metric-box'><h2>{len(df):,}</h2>Total Vehicles</div>",
-            unsafe_allow_html=True
-        )
+            unsafe_allow_html=True)
 
     with c2:
         st.markdown(
             f"<div class='metric-box'><h2>{df['manufacturer'].nunique()}</h2>Manufacturers</div>",
-            unsafe_allow_html=True
-        )
+            unsafe_allow_html=True)
 
     with c3:
         st.markdown(
             f"<div class='metric-box'><h2>${int(df['price'].median()):,}</h2>Median Price</div>",
-            unsafe_allow_html=True
-        )
+            unsafe_allow_html=True)
 
     st.write("")
     st.markdown("### 🚀 What this app does")
 
     st.markdown("""
-     Predict realistic used car prices using trained ML models  
-     Classify vehicles into Budget / Midrange / Premium segments  
-     Provide confidence estimation based on model performance  
-     Explore the dataset used for training
-    """)
+Predict realistic used car prices using trained ML models  
+Classify vehicles into Budget / Midrange / Premium segments  
+Provide confidence estimation based on model performance  
+Explore the dataset used for training
+""")
+
+    # ---- About / Author section ----
+    st.markdown("---")
+
+    st.markdown("### 👨‍💻 About the Author")
+
+    st.markdown("""
+**Saksham Malhotra**
+
+Machine Learning & Data Science student focused on building practical AI applications and data-driven systems.  
+This project demonstrates an end-to-end ML workflow — from data preprocessing and model training to deployment using Streamlit.
+
+📫 **Connect with me:**
+
+- GitHub: https://github.com/Saksham2404  
+- LinkedIn: https://www.linkedin.com/in/saksham02
+""")
 
 
-# ---- dataset explorer ----
-# basic inspection view for users
+# ---- Dataset explorer ----
 elif st.session_state.page == "eda":
 
     st.header("📊 Dataset Explorer")
@@ -187,13 +185,12 @@ elif st.session_state.page == "eda":
     st.dataframe(df.describe())
 
 
-# ---- prediction page ----
-# user inputs are collected here and passed to trained models
+# ---- Prediction page ----
 elif st.session_state.page == "predict":
 
     st.header("🚗 Car Price Prediction")
 
-    col1, col2 = st.columns([1.2, 1])
+    col1, col2 = st.columns([1.2,1])
 
     with col1:
 
@@ -240,7 +237,7 @@ elif st.session_state.page == "predict":
 
         predict_btn = st.button("Predict Price")
 
-    # result panel
+    # ---- Prediction output ----
     with col2:
 
         if predict_btn:
@@ -284,7 +281,8 @@ elif st.session_state.page == "predict":
                 )
 
                 st.write("")
-                st.caption(f"Model confidence: {confidence}%")
+                st.caption(f"Estimated prediction confidence: {confidence}%")
+
                 st.progress(confidence / 100)
 
                 st.markdown(
