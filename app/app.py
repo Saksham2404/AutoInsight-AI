@@ -4,7 +4,6 @@ import numpy as np
 import joblib
 import time
 import os
-import matplotlib.pyplot as plt
 
 
 # ---- Page configuration ----
@@ -70,6 +69,16 @@ st.markdown("""
     border:1px solid #1e293b;
     text-align:center;
 }
+
+.footer {
+    margin-top:60px;
+    padding-top:20px;
+    border-top:1px solid #1e293b;
+    color:#94a3b8;
+    font-size:14px;
+    display:flex;
+    justify-content:space-between;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -95,10 +104,7 @@ with col2:
 # ---- HOME PAGE ----
 if st.session_state.page == "home":
 
-    st.markdown(
-        "<h1 style='text-align:center;'>🚘 AutoInsight AI</h1>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<h1 style='text-align:center;'>🚘 AutoInsight AI</h1>", unsafe_allow_html=True)
 
     st.markdown(
         "<p style='text-align:center;color:#94a3b8;'>Machine Learning powered vehicle valuation and market intelligence platform</p>",
@@ -110,26 +116,19 @@ if st.session_state.page == "home":
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown(
-            f"<div class='metric-box'><h2>{len(df):,}</h2>Total Vehicles</div>",
-            unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-box'><h2>{len(df):,}</h2>Total Vehicles</div>", unsafe_allow_html=True)
 
     with c2:
-        st.markdown(
-            f"<div class='metric-box'><h2>{df['manufacturer'].nunique()}</h2>Manufacturers</div>",
-            unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-box'><h2>{df['manufacturer'].nunique()}</h2>Manufacturers</div>", unsafe_allow_html=True)
 
     with c3:
-        st.markdown(
-            f"<div class='metric-box'><h2>${int(df['price'].median()):,}</h2>Median Price</div>",
-            unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-box'><h2>${int(df['price'].median()):,}</h2>Median Price</div>", unsafe_allow_html=True)
 
     st.markdown("### 🚀 What this app does")
 
     st.markdown("""
 Predict realistic used car prices using trained ML models  
 Classify vehicles into Budget / Midrange / Premium segments  
-Provide confidence estimation based on model performance  
 Explore the dataset used for training
 """)
 
@@ -162,43 +161,16 @@ elif st.session_state.page == "predict":
         year = st.number_input("Year", 1990, 2025, 2015)
         odometer = st.number_input("Odometer", 0, 500000, 60000)
 
-        manufacturer = st.selectbox(
-            "Manufacturer",
-            sorted(df["manufacturer"].unique())
-        )
-
-        fuel = st.selectbox(
-            "Fuel",
-            sorted(df["fuel"].unique())
-        )
-
-        condition = st.selectbox(
-            "Condition",
-            sorted(df["condition"].unique())
-        )
-
-        car_type = st.selectbox(
-            "Type",
-            sorted(df["type"].unique())
-        )
+        manufacturer = st.selectbox("Manufacturer", sorted(df["manufacturer"].unique()))
+        fuel = st.selectbox("Fuel", sorted(df["fuel"].unique()))
+        condition = st.selectbox("Condition", sorted(df["condition"].unique()))
+        car_type = st.selectbox("Type", sorted(df["type"].unique()))
 
         with st.expander("⚙️ Advanced Options (Optional)", expanded=False):
-            cylinders = st.selectbox(
-                "Cylinders",
-                sorted(df["cylinders"].dropna().unique())
-            )
-            transmission = st.selectbox(
-                "Transmission",
-                sorted(df["transmission"].dropna().unique())
-            )
-            drive = st.selectbox(
-                "Drive",
-                sorted(df["drive"].dropna().unique())
-            )
-            state = st.selectbox(
-                "State",
-                sorted(df["state"].dropna().unique())
-            )
+            cylinders = st.selectbox("Cylinders", sorted(df["cylinders"].dropna().unique()))
+            transmission = st.selectbox("Transmission", sorted(df["transmission"].dropna().unique()))
+            drive = st.selectbox("Drive", sorted(df["drive"].dropna().unique()))
+            state = st.selectbox("State", sorted(df["state"].dropna().unique()))
 
         predict_btn = st.button("Predict Price")
 
@@ -236,91 +208,35 @@ elif st.session_state.page == "predict":
                 )
                 time.sleep(0.015)
 
-            st.markdown(
-                f"<div class='badge'>{category.upper()}</div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='badge'>{category.upper()}</div>", unsafe_allow_html=True)
 
             st.markdown(
                 f"<div style='color:#22c55e;font-weight:600;margin-top:10px;'>Expected price range: ${lower:,} — ${upper:,}</div>",
                 unsafe_allow_html=True
             )
 
-            # ---- Market Comparison ----
+            # ---- Market Comparison (Dynamic) ----
             st.markdown("### 📊 Market Comparison")
 
             similar_cars = df[
                 (df["manufacturer"] == manufacturer) &
-                (df["type"] == car_type)
+                (df["type"] == car_type) &
+                (df["fuel"] == fuel)
             ]
 
-            if len(similar_cars) > 20:
-
+            if len(similar_cars) > 10:
                 avg_price = int(similar_cars["price"].mean())
                 median_price = int(similar_cars["price"].median())
 
-                higher_than = (
-                    (similar_cars["price"] < final_price).sum()
-                    / len(similar_cars)
-                ) * 100
-
                 st.write(f"Average price of similar cars: ${avg_price:,}")
                 st.write(f"Median market price: ${median_price:,}")
-                st.write(f"This prediction is higher than {higher_than:.1f}% of similar listings.")
 
-                st.markdown("### 📈 Price Distribution")
-
-                fig, ax = plt.subplots()
-                ax.hist(similar_cars["price"], bins=30)
-                ax.axvline(final_price)
-                ax.set_xlabel("Price")
-                ax.set_ylabel("Number of Cars")
-
-                st.pyplot(fig)
-
+                if final_price > avg_price:
+                    st.write("This prediction is above average market pricing.")
+                else:
+                    st.write("This prediction is within typical market pricing.")
             else:
-                st.info("Not enough similar cars for comparison.")
-
-            # ---- Dynamic Price Explanation ----
-            st.markdown("### 🧠 Price Explanation")
-
-            current_year = 2025
-            vehicle_age = current_year - year
-
-            positive_points = []
-            negative_points = []
-            neutral_points = []
-
-            if vehicle_age <= 3:
-                positive_points.append("Newer model year compared to market average")
-            elif vehicle_age >= 12:
-                negative_points.append("Older vehicle age reduces resale value")
-
-            if odometer < 50000:
-                positive_points.append("Lower mileage than typical vehicles")
-            elif odometer > 150000:
-                negative_points.append("Higher mileage lowers market valuation")
-
-            positive_conditions = ["like new", "excellent", "good"]
-            negative_conditions = ["fair", "salvage"]
-
-            if condition in positive_conditions:
-                positive_points.append("Vehicle condition positively affects valuation")
-            elif condition in negative_conditions:
-                negative_points.append("Vehicle condition negatively affects resale demand")
-
-            neutral_points.append("Manufacturer and vehicle type influence resale demand")
-
-            st.info("This estimated price is influenced mainly by:")
-
-            for p in positive_points:
-                st.success(p)
-
-            for n in negative_points:
-                st.warning(n)
-
-            for n in neutral_points:
-                st.info(n)
+                st.info("Not enough similar cars available for comparison.")
 
             # ---- Market Position ----
             st.markdown("### 💡 Market Position")
@@ -331,3 +247,16 @@ elif st.session_state.page == "predict":
                 st.warning("This vehicle falls in the lower price range of the market.")
             else:
                 st.info("This vehicle is priced within the typical market range.")
+
+
+# ---- Footer ----
+st.markdown("""
+<div class="footer">
+<div>Built by Saksham Malhotra</div>
+<div>
+<a href="https://www.linkedin.com/in/saksham02" target="_blank">LinkedIn</a> |
+<a href="https://github.com/Saksham2404" target="_blank">GitHub</a>
+</div>
+<div>© 2026 AutoInsight AI</div>
+</div>
+""", unsafe_allow_html=True)
