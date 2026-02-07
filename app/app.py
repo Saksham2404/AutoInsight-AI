@@ -221,13 +221,19 @@ elif st.session_state.page == "predict":
                 (market_stats["manufacturer"] == manufacturer) &
                 (market_stats["type"] == car_type)
             ]
-
+            if len(similar_cars) == 0:
+                similar_cars = market_stats[
+                    (market_stats["type"] == car_type)
+                ]
             if len(similar_cars) > 0:
-                avg_price = int(similar_cars["avg_price"].values[0])
-                median_price = int(similar_cars["median_price"].values[0])
+                avg_price = int(similar_cars["avg_price"].mean())
+                median_price = int(similar_cars["median_price"].median())
 
-                st.info(f"Average price of similar cars: ${avg_price:,}")
-                st.info(f"Median market price: ${median_price:,}")
+
+                st.info(
+                f"Average price of similar cars: ${avg_price:,}"
+                f"Median market price: ${median_price:,}"
+                )
 
             else:
                 market_avg = int(market_stats["avg_price"].mean())
