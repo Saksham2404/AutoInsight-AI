@@ -242,3 +242,32 @@ elif st.session_state.page == "predict":
                 st.warning("This vehicle is priced higher than average — consider condition and features before buying.")
             else:
                 st.info("Fair market pricing — reasonable choice if vehicle condition matches expectations.")
+# ---- Footer ----
+st.markdown("""
+<hr style="margin-top:40px;margin-bottom:10px;border:0.5px solid #1e293b;">
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:14px;
+color:#94a3b8;
+">
+
+<div>
+Built by <b>Saksham Malhotra</b>
+</div>
+
+<div>
+<a href="https://www.linkedin.com/in/saksham02" target="_blank" style="color:#22c55e;text-decoration:none;margin-right:15px;">LinkedIn</a>
+|
+<a href="https://github.com/Saksham2404" target="_blank" style="color:#22c55e;text-decoration:none;margin-left:15px;">GitHub</a>
+</div>
+
+<div>
+© 2026 AutoInsight AI
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
