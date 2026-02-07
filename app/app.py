@@ -247,68 +247,57 @@ elif st.session_state.page == "predict":
             )
 
             # -----------------------------
-            # 1️⃣ Market Comparison
+            # ✅ NEW 1️⃣ Price Explanation (Replaces Market Comparison)
             # -----------------------------
-            st.markdown("### 📊 Market Comparison")
+            st.markdown("### 📊 Price Explanation")
 
-            similar_cars = df[
-                (df["manufacturer"] == manufacturer) &
-                (df["type"] == car_type)
-            ]
+            explanation_points = []
 
-            if len(similar_cars) > 20:
+            if year >= df["year"].median():
+                explanation_points.append("Newer model year compared to market average")
 
-                avg_price = int(similar_cars["price"].mean())
-                median_price = int(similar_cars["price"].median())
+            if odometer < df["odometer"].median():
+                explanation_points.append("Lower mileage than typical vehicles")
 
-                higher_than = (
-                    (similar_cars["price"] < final_price).sum()
-                    / len(similar_cars)
-                ) * 100
+            if condition in ["like new", "excellent"]:
+                explanation_points.append("Vehicle condition positively affects valuation")
 
-                st.write(f"Average price of similar cars: ${avg_price:,}")
-                st.write(f"Median market price: ${median_price:,}")
-                st.write(f"This prediction is higher than {higher_than:.1f}% of similar listings.")
+            explanation_points.append("Manufacturer and vehicle type influence resale demand")
 
-                # -----------------------------
-                # 2️⃣ Price Distribution
-                # -----------------------------
-                st.markdown("### 📈 Price Distribution")
+            st.info(
+                "This estimated price is influenced mainly by:\n\n- " +
+                "\n- ".join(explanation_points)
+            )
 
-                fig, ax = plt.subplots()
-                ax.hist(similar_cars["price"], bins=30)
-                ax.axvline(final_price)
-                ax.set_xlabel("Price")
-                ax.set_ylabel("Number of Cars")
+            # -----------------------------
+            # ✅ NEW 2️⃣ Market Position + Recommendation (Replaces Insights)
+            # -----------------------------
+            st.markdown("### 💡 Market Position")
 
-                st.pyplot(fig)
+            percentile = (
+                (df["price"] < final_price).sum() / len(df)
+            ) * 100
+
+            if percentile > 75:
+                st.success(
+                    f"This vehicle falls in the higher price range of the market (top {100-percentile:.0f}%)."
+                )
+                st.success(
+                    "Recommended for buyers prioritizing newer vehicles and better condition."
+                )
+
+            elif percentile < 25:
+                st.success(
+                    f"This vehicle falls in the lower price range of the market (bottom {percentile:.0f}%)."
+                )
+                st.success(
+                    "This may represent a value purchase compared to market trends."
+                )
 
             else:
-                st.info("Not enough similar cars for comparison.")
-
-            # -----------------------------
-            # 3️⃣ Influencing Factors
-            # -----------------------------
-            st.markdown("### 🧠 What Influences Price Most")
-
-            st.write("""
-Based on training data, the most influential factors typically include:
-
-- Vehicle year (newer cars have higher value)
-- Odometer / mileage
-- Manufacturer and vehicle type
-- Overall vehicle condition
-""")
-
-            # -----------------------------
-            # 4️⃣ Smart Insights
-            # -----------------------------
-            st.markdown("### 💡 Insight")
-
-            if odometer < 50000:
-                st.success("Lower mileage vehicles typically command higher market prices.")
-            elif odometer > 150000:
-                st.warning("High mileage vehicles usually sell below average market price.")
-
-            if year >= 2020:
-                st.success("Newer vehicles generally retain higher resale value.")
+                st.success(
+                    "This vehicle is priced within the normal market range for similar vehicles."
+                )
+                st.success(
+                    "Balanced option between price and vehicle features."
+                )
