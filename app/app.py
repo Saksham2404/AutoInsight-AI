@@ -235,8 +235,8 @@ elif st.session_state.page == "predict":
 
             # Try to compare with similar vehicles first
             similar_cars = df[
-                (df["manufacturer"] == manufacturer) &
-                (df["type"] == car_type)
+                (df["type"] == car_type) &
+                (abs(df["year"] - year) <= 3)
             ]
 
             if len(similar_cars) > 10:
