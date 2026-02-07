@@ -231,7 +231,7 @@ elif st.session_state.page == "predict":
 
 
                 st.info(
-                f"Average price of similar cars: ${avg_price:,}"
+                f"Average price of similar cars: ${avg_price:,}\n\n"
                 f"Median market price: ${median_price:,}"
                 )
 
