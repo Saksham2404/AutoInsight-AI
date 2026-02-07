@@ -4,6 +4,8 @@ import numpy as np
 import joblib
 import time
 import os
+import matplotlib.pyplot as plt
+
 
 # ---- Page configuration ----
 st.set_page_config(
@@ -12,9 +14,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ---- Data & model loading ----
-# Using cached loading so app doesn't reload models on every interaction
 
+# ---- Data & model loading ----
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 DATA_PATH = os.path.join(BASE_DIR, "data", "used_cars_sample.csv")
@@ -37,7 +38,8 @@ def load_models():
 df = load_data()
 reg_model, clf_model = load_models()
 
-# ---- Global styling ----
+
+# ---- Styling ----
 st.markdown("""
 <style>
 .main {
@@ -68,27 +70,11 @@ st.markdown("""
     border:1px solid #1e293b;
     text-align:center;
 }
-
-/* Footer styling */
-.footer {
-    width:100%;
-    padding:12px 40px;
-    color:#94a3b8;
-    font-size:14px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.footer a {
-    color:#22c55e;
-    text-decoration:none;
-    margin:0 8px;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# ---- Navigation state ----
+
+# ---- Navigation ----
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -104,6 +90,7 @@ with col2:
     with c3:
         if st.button("🚗 Price Predictor"):
             st.session_state.page = "predict"
+
 
 # ---- HOME PAGE ----
 if st.session_state.page == "home":
@@ -137,17 +124,17 @@ if st.session_state.page == "home":
             f"<div class='metric-box'><h2>${int(df['price'].median()):,}</h2>Median Price</div>",
             unsafe_allow_html=True)
 
-    st.write("")
     st.markdown("### 🚀 What this app does")
 
     st.markdown("""
-    Predict realistic used car prices using trained ML models  
-    Classify vehicles into Budget / Midrange / Premium segments  
-    Provide confidence estimation based on model performance  
-    Explore the dataset used for training
-    """)
+Predict realistic used car prices using trained ML models  
+Classify vehicles into Budget / Midrange / Premium segments  
+Provide confidence estimation based on model performance  
+Explore the dataset used for training
+""")
 
-# ---- DATA EXPLORER PAGE ----
+
+# ---- EDA PAGE ----
 elif st.session_state.page == "eda":
 
     st.header("📊 Dataset Explorer")
@@ -161,6 +148,7 @@ elif st.session_state.page == "eda":
     }))
 
     st.dataframe(df.describe())
+
 
 # ---- PREDICTION PAGE ----
 elif st.session_state.page == "predict":
@@ -234,10 +222,9 @@ elif st.session_state.page == "predict":
             price_pred = reg_model.predict(user_df)[0]
             category = clf_model.predict(user_df)[0]
 
-            confidence = 82
+            final_price = int(price_pred)
             lower = int(price_pred * 0.85)
             upper = int(price_pred * 1.15)
-            final_price = int(price_pred)
 
             st.markdown("### Estimated Price")
 
@@ -254,31 +241,74 @@ elif st.session_state.page == "predict":
                 unsafe_allow_html=True
             )
 
-            st.caption(f"Model confidence: {confidence}%")
-            st.progress(confidence / 100)
-
             st.markdown(
-                f"""
-                <div style='color:#22c55e;font-weight:600;margin-top:10px;'>
-                    Expected price range: ${lower:,} — ${upper:,}
-                </div>
-                """,
+                f"<div style='color:#22c55e;font-weight:600;margin-top:10px;'>Expected price range: ${lower:,} — ${upper:,}</div>",
                 unsafe_allow_html=True
             )
 
-# ---- FOOTER (visible on all pages) ----
-st.markdown("---")
+            # -----------------------------
+            # 1️⃣ Market Comparison
+            # -----------------------------
+            st.markdown("### 📊 Market Comparison")
 
-st.markdown(
-    """
-    <div class="footer">
-        <div>Built by <b>Saksham Malhotra</b></div>
-        <div>
-            <a href="https://www.linkedin.com/in/saksham02" target="_blank">LinkedIn</a> |
-            <a href="https://github.com/Saksham2404" target="_blank">GitHub</a>
-        </div>
-        <div>© 2026 AutoInsight AI</div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+            similar_cars = df[
+                (df["manufacturer"] == manufacturer) &
+                (df["type"] == car_type)
+            ]
+
+            if len(similar_cars) > 20:
+
+                avg_price = int(similar_cars["price"].mean())
+                median_price = int(similar_cars["price"].median())
+
+                higher_than = (
+                    (similar_cars["price"] < final_price).sum()
+                    / len(similar_cars)
+                ) * 100
+
+                st.write(f"Average price of similar cars: ${avg_price:,}")
+                st.write(f"Median market price: ${median_price:,}")
+                st.write(f"This prediction is higher than {higher_than:.1f}% of similar listings.")
+
+                # -----------------------------
+                # 2️⃣ Price Distribution
+                # -----------------------------
+                st.markdown("### 📈 Price Distribution")
+
+                fig, ax = plt.subplots()
+                ax.hist(similar_cars["price"], bins=30)
+                ax.axvline(final_price)
+                ax.set_xlabel("Price")
+                ax.set_ylabel("Number of Cars")
+
+                st.pyplot(fig)
+
+            else:
+                st.info("Not enough similar cars for comparison.")
+
+            # -----------------------------
+            # 3️⃣ Influencing Factors
+            # -----------------------------
+            st.markdown("### 🧠 What Influences Price Most")
+
+            st.write("""
+Based on training data, the most influential factors typically include:
+
+- Vehicle year (newer cars have higher value)
+- Odometer / mileage
+- Manufacturer and vehicle type
+- Overall vehicle condition
+""")
+
+            # -----------------------------
+            # 4️⃣ Smart Insights
+            # -----------------------------
+            st.markdown("### 💡 Insight")
+
+            if odometer < 50000:
+                st.success("Lower mileage vehicles typically command higher market prices.")
+            elif odometer > 150000:
+                st.warning("High mileage vehicles usually sell below average market price.")
+
+            if year >= 2020:
+                st.success("Newer vehicles generally retain higher resale value.")
