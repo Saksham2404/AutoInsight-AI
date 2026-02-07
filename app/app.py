@@ -4,6 +4,7 @@ import numpy as np
 import joblib
 import time
 import os
+import matplotlib.pyplot as plt
 
 
 # ---- Page configuration ----
@@ -69,16 +70,6 @@ st.markdown("""
     border:1px solid #1e293b;
     text-align:center;
 }
-
-.footer {
-    margin-top:60px;
-    padding-top:20px;
-    border-top:1px solid #1e293b;
-    color:#94a3b8;
-    font-size:14px;
-    display:flex;
-    justify-content:space-between;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -105,7 +96,6 @@ with col2:
 if st.session_state.page == "home":
 
     st.markdown("<h1 style='text-align:center;'>🚘 AutoInsight AI</h1>", unsafe_allow_html=True)
-
     st.markdown(
         "<p style='text-align:center;color:#94a3b8;'>Machine Learning powered vehicle valuation and market intelligence platform</p>",
         unsafe_allow_html=True
@@ -129,6 +119,7 @@ if st.session_state.page == "home":
     st.markdown("""
 Predict realistic used car prices using trained ML models  
 Classify vehicles into Budget / Midrange / Premium segments  
+Provide confidence estimation based on model performance  
 Explore the dataset used for training
 """)
 
@@ -215,48 +206,39 @@ elif st.session_state.page == "predict":
                 unsafe_allow_html=True
             )
 
-            # ---- Market Comparison (Dynamic) ----
+            # ---- Market Comparison (Improved Fallback) ----
             st.markdown("### 📊 Market Comparison")
 
             similar_cars = df[
                 (df["manufacturer"] == manufacturer) &
-                (df["type"] == car_type) &
-                (df["fuel"] == fuel)
+                (df["type"] == car_type)
             ]
 
-            if len(similar_cars) > 10:
+            if len(similar_cars) > 20:
                 avg_price = int(similar_cars["price"].mean())
                 median_price = int(similar_cars["price"].median())
 
                 st.write(f"Average price of similar cars: ${avg_price:,}")
                 st.write(f"Median market price: ${median_price:,}")
 
-                if final_price > avg_price:
-                    st.write("This prediction is above average market pricing.")
-                else:
-                    st.write("This prediction is within typical market pricing.")
             else:
-                st.info("Not enough similar cars available for comparison.")
+                market_avg = int(df["price"].mean())
+                market_median = int(df["price"].median())
 
-            # ---- Market Position ----
-            st.markdown("### 💡 Market Position")
+                st.info(
+                    f"Market overview: average used car price is ${market_avg:,} "
+                    f"with a median price of ${market_median:,}. "
+                    f"This estimate is compared against overall market trends."
+                )
 
-            if final_price > df["price"].quantile(0.75):
-                st.success("This vehicle falls in the higher price range of the market.")
-            elif final_price < df["price"].quantile(0.25):
-                st.warning("This vehicle falls in the lower price range of the market.")
+            # ---- Should You Buy This? ----
+            st.markdown("### 💡 Should You Buy This?")
+
+            market_median = df["price"].median()
+
+            if final_price < market_median * 0.9:
+                st.success("Good value for money — priced below typical market range for similar vehicles.")
+            elif final_price > market_median * 1.2:
+                st.warning("This vehicle is priced higher than average — consider condition and features before buying.")
             else:
-                st.info("This vehicle is priced within the typical market range.")
-
-
-# ---- Footer ----
-st.markdown("""
-<div class="footer">
-<div>Built by Saksham Malhotra</div>
-<div>
-<a href="https://www.linkedin.com/in/saksham02" target="_blank">LinkedIn</a> |
-<a href="https://github.com/Saksham2404" target="_blank">GitHub</a>
-</div>
-<div>© 2026 AutoInsight AI</div>
-</div>
-""", unsafe_allow_html=True)
+                st.info("Fair market pricing — reasonable choice if vehicle condition matches expectations.")
