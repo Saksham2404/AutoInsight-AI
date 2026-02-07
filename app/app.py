@@ -230,18 +230,38 @@ elif st.session_state.page == "predict":
                     f"with a median price of ${market_median:,}. "
                     f"This estimate is compared against overall market trends."
                 )
-
             # ---- Should You Buy This? ----
             st.markdown("### 💡 Should You Buy This?")
 
-            market_median = df["price"].median()
+            # Try to compare with similar vehicles first
+            similar_cars = df[
+                (df["manufacturer"] == manufacturer) &
+                (df["type"] == car_type)
+            ]
 
-            if final_price < market_median * 0.9:
-                st.success("Good value for money — priced below typical market range for similar vehicles.")
-            elif final_price > market_median * 1.2:
-                st.warning("This vehicle is priced higher than average — consider condition and features before buying.")
+            if len(similar_cars) > 10:
+                market_median = similar_cars["price"].median()
             else:
-                st.info("Fair market pricing — reasonable choice if vehicle condition matches expectations.")
+                # fallback to overall market if not enough data
+                market_median = df["price"].median()
+
+            price_ratio = final_price / market_median
+
+            if price_ratio < 0.9:
+                st.success(
+                    "Good value for money — priced lower than most similar vehicles in the market."
+                )
+
+            elif price_ratio > 1.15:
+                st.warning(
+                    "This vehicle is priced higher than similar listings — consider mileage, condition, and features before buying."
+                )
+
+            else:
+                st.info(
+                    "Fair market pricing — this vehicle is priced close to similar cars in the market."
+                )
+
 # ---- Footer ----
 st.markdown("""
 <hr style="margin-top:40px;margin-bottom:10px;border:0.5px solid #1e293b;">
