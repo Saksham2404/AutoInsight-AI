@@ -218,8 +218,8 @@ elif st.session_state.page == "predict":
                 avg_price = int(similar_cars["price"].mean())
                 median_price = int(similar_cars["price"].median())
 
-                st.write(f"Average price of similar cars: ${avg_price:,}")
-                st.write(f"Median market price: ${median_price:,}")
+                st.info(f"Average price of similar cars: ${avg_price:,}")
+                st.info(f"Median market price: ${median_price:,}")
 
             else:
                 market_avg = int(df["price"].mean())
@@ -243,7 +243,12 @@ elif st.session_state.page == "predict":
                 market_median = similar_cars["price"].median()
             else:
                 # fallback to overall market if not enough data
-                market_median = df["price"].median()
+                # market_median = df["price"].median()
+                if len(similar_cars) > 10:
+                    market_median = similar_cars["price"].median()
+                else:
+                    market_median = df["price"].median()
+
 
             price_ratio = final_price / market_median
 
