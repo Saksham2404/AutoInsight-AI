@@ -78,7 +78,7 @@ st.markdown("""
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-col1, col2, col3 = st.columns([3,4,3])
+col1, col2, col3 = st.columns([3, 4, 3])
 with col2:
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -155,7 +155,7 @@ elif st.session_state.page == "predict":
 
     st.header("🚗 Car Price Prediction")
 
-    col1, col2 = st.columns([1.2,1])
+    col1, col2 = st.columns([1.2, 1])
 
     with col1:
 
@@ -246,58 +246,88 @@ elif st.session_state.page == "predict":
                 unsafe_allow_html=True
             )
 
-            # -----------------------------
-            # ✅ NEW 1️⃣ Price Explanation (Replaces Market Comparison)
-            # -----------------------------
-            st.markdown("### 📊 Price Explanation")
+            # ---- Market Comparison ----
+            st.markdown("### 📊 Market Comparison")
 
-            explanation_points = []
+            similar_cars = df[
+                (df["manufacturer"] == manufacturer) &
+                (df["type"] == car_type)
+            ]
 
-            if year >= df["year"].median():
-                explanation_points.append("Newer model year compared to market average")
+            if len(similar_cars) > 20:
 
-            if odometer < df["odometer"].median():
-                explanation_points.append("Lower mileage than typical vehicles")
+                avg_price = int(similar_cars["price"].mean())
+                median_price = int(similar_cars["price"].median())
 
-            if condition in ["like new", "excellent"]:
-                explanation_points.append("Vehicle condition positively affects valuation")
+                higher_than = (
+                    (similar_cars["price"] < final_price).sum()
+                    / len(similar_cars)
+                ) * 100
 
-            explanation_points.append("Manufacturer and vehicle type influence resale demand")
+                st.write(f"Average price of similar cars: ${avg_price:,}")
+                st.write(f"Median market price: ${median_price:,}")
+                st.write(f"This prediction is higher than {higher_than:.1f}% of similar listings.")
 
-            st.info(
-                "This estimated price is influenced mainly by:\n\n- " +
-                "\n- ".join(explanation_points)
-            )
+                st.markdown("### 📈 Price Distribution")
 
-            # -----------------------------
-            # ✅ NEW 2️⃣ Market Position + Recommendation (Replaces Insights)
-            # -----------------------------
-            st.markdown("### 💡 Market Position")
+                fig, ax = plt.subplots()
+                ax.hist(similar_cars["price"], bins=30)
+                ax.axvline(final_price)
+                ax.set_xlabel("Price")
+                ax.set_ylabel("Number of Cars")
 
-            percentile = (
-                (df["price"] < final_price).sum() / len(df)
-            ) * 100
-
-            if percentile > 75:
-                st.success(
-                    f"This vehicle falls in the higher price range of the market (top {100-percentile:.0f}%)."
-                )
-                st.success(
-                    "Recommended for buyers prioritizing newer vehicles and better condition."
-                )
-
-            elif percentile < 25:
-                st.success(
-                    f"This vehicle falls in the lower price range of the market (bottom {percentile:.0f}%)."
-                )
-                st.success(
-                    "This may represent a value purchase compared to market trends."
-                )
+                st.pyplot(fig)
 
             else:
-                st.success(
-                    "This vehicle is priced within the normal market range for similar vehicles."
-                )
-                st.success(
-                    "Balanced option between price and vehicle features."
-                )
+                st.info("Not enough similar cars for comparison.")
+
+            # ---- Dynamic Price Explanation ----
+            st.markdown("### 🧠 Price Explanation")
+
+            current_year = 2025
+            vehicle_age = current_year - year
+
+            positive_points = []
+            negative_points = []
+            neutral_points = []
+
+            if vehicle_age <= 3:
+                positive_points.append("Newer model year compared to market average")
+            elif vehicle_age >= 12:
+                negative_points.append("Older vehicle age reduces resale value")
+
+            if odometer < 50000:
+                positive_points.append("Lower mileage than typical vehicles")
+            elif odometer > 150000:
+                negative_points.append("Higher mileage lowers market valuation")
+
+            positive_conditions = ["like new", "excellent", "good"]
+            negative_conditions = ["fair", "salvage"]
+
+            if condition in positive_conditions:
+                positive_points.append("Vehicle condition positively affects valuation")
+            elif condition in negative_conditions:
+                negative_points.append("Vehicle condition negatively affects resale demand")
+
+            neutral_points.append("Manufacturer and vehicle type influence resale demand")
+
+            st.info("This estimated price is influenced mainly by:")
+
+            for p in positive_points:
+                st.success(p)
+
+            for n in negative_points:
+                st.warning(n)
+
+            for n in neutral_points:
+                st.info(n)
+
+            # ---- Market Position ----
+            st.markdown("### 💡 Market Position")
+
+            if final_price > df["price"].quantile(0.75):
+                st.success("This vehicle falls in the higher price range of the market.")
+            elif final_price < df["price"].quantile(0.25):
+                st.warning("This vehicle falls in the lower price range of the market.")
+            else:
+                st.info("This vehicle is priced within the typical market range.")
