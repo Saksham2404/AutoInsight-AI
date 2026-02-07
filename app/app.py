@@ -38,6 +38,14 @@ def load_models():
 df = load_data()
 reg_model, clf_model = load_models()
 
+MARKET_STATS_PATH = os.path.join(BASE_DIR, "data", "market_stats.csv")
+
+@st.cache_data
+def load_market_stats():
+    return pd.read_csv(MARKET_STATS_PATH)
+
+market_stats = load_market_stats()
+
 
 # ---- Styling ----
 st.markdown("""
@@ -209,9 +217,13 @@ elif st.session_state.page == "predict":
             # ---- Market Comparison (Improved Fallback) ----
             st.markdown("### 📊 Market Comparison")
 
-            similar_cars = df[
-                (df["manufacturer"] == manufacturer) &
-                (df["type"] == car_type)
+            # similar_cars = df[
+            #     (df["manufacturer"] == manufacturer) &
+            #     (df["type"] == car_type)
+            # ]
+            similar_cars = market_stats[
+                (market_stats["manufacturer"] == manufacturer) &
+                (market_stats["type"] == car_type)
             ]
 
             if len(similar_cars) > 20:
@@ -244,20 +256,19 @@ elif st.session_state.page == "predict":
             else:
                 # fallback to overall market if not enough data
                 # market_median = df["price"].median()
-                if len(similar_cars) > 10:
-                    market_median = similar_cars["price"].median()
+                if len(similar_cars) > 0:
+                    market_median = similar_cars["median_price"].values[0]
                 else:
-                    market_median = df["price"].median()
-
+                    market_median = market_stats["median_price"].median()
 
             price_ratio = final_price / market_median
 
-            if price_ratio < 0.9:
+            if final_price < market_median * 0.9:
                 st.success(
                     "Good value for money — priced lower than most similar vehicles in the market."
                 )
 
-            elif price_ratio > 1.15:
+            elif final_price > market_median * 1.2:
                 st.warning(
                     "This vehicle is priced higher than similar listings — consider mileage, condition, and features before buying."
                 )
