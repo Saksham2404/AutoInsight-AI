@@ -217,25 +217,21 @@ elif st.session_state.page == "predict":
             # ---- Market Comparison (Improved Fallback) ----
             st.markdown("### 📊 Market Comparison")
 
-            # similar_cars = df[
-            #     (df["manufacturer"] == manufacturer) &
-            #     (df["type"] == car_type)
-            # ]
             similar_cars = market_stats[
                 (market_stats["manufacturer"] == manufacturer) &
                 (market_stats["type"] == car_type)
             ]
 
-            if len(similar_cars) > 20:
-                avg_price = int(similar_cars["price"].mean())
-                median_price = int(similar_cars["price"].median())
+            if len(similar_cars) > 0:
+                avg_price = int(similar_cars["avg_price"].values[0])
+                median_price = int(similar_cars["median_price"].values[0])
 
                 st.info(f"Average price of similar cars: ${avg_price:,}")
                 st.info(f"Median market price: ${median_price:,}")
 
             else:
-                market_avg = int(df["price"].mean())
-                market_median = int(df["price"].median())
+                market_avg = int(market_stats["avg_price"].mean())
+                market_median = int(market_stats["median_price"].median())
 
                 st.info(
                     f"Market overview: average used car price is ${market_avg:,} "
@@ -246,29 +242,30 @@ elif st.session_state.page == "predict":
             st.markdown("### 💡 Should You Buy This?")
 
             # Try to compare with similar vehicles first
-            similar_cars = df[
-                (df["type"] == car_type) &
-                (abs(df["year"] - year) <= 3)
+            similar_cars = market_stats[
+                (market_stats["manufacturer"] == manufacturer) &
+                (market_stats["type"] == car_type)
             ]
 
             if len(similar_cars) > 10:
-                market_median = similar_cars["price"].median()
+                market_median = similar_cars["median_price"].values[0]
             else:
                 # fallback to overall market if not enough data
-                # market_median = df["price"].median()
-                if len(similar_cars) > 0:
-                    market_median = similar_cars["median_price"].values[0]
-                else:
-                    market_median = market_stats["median_price"].median()
+                market_median = market_stats["median_price"].median()
+                # if len(similar_cars) > 0:
+                #     market_median = similar_cars["median_price"].values[0]
+                # else:
+                #     market_median = market_stats["median_price"].median()
 
             price_ratio = final_price / market_median
 
-            if final_price < market_median * 0.9:
+            if price_ratio < 0.9:
                 st.success(
                     "Good value for money — priced lower than most similar vehicles in the market."
                 )
 
-            elif final_price > market_median * 1.2:
+            elif price_ratio > 1.15:
+
                 st.warning(
                     "This vehicle is priced higher than similar listings — consider mileage, condition, and features before buying."
                 )
