@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
 import time
 import os
 import matplotlib.pyplot as plt
-
+import requests
 
 # ---- Page configuration ----
 st.set_page_config(
@@ -13,14 +12,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+API_URL = "http://127.0.0.1:8000/predict"
 
 
 # ---- Data & model loading ----
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 DATA_PATH = os.path.join(BASE_DIR, "data", "used_cars_sample.csv")
-PRICE_MODEL_PATH = os.path.join(BASE_DIR, "model", "price_pipeline.pkl")
-CATEGORY_MODEL_PATH = os.path.join(BASE_DIR, "model", "category_pipeline.pkl")
+# PRICE_MODEL_PATH = os.path.join(BASE_DIR, "model", "price_pipeline.pkl")
+# CATEGORY_MODEL_PATH = os.path.join(BASE_DIR, "model", "category_pipeline.pkl")
 
 
 @st.cache_data
@@ -28,15 +28,15 @@ def load_data():
     return pd.read_csv(DATA_PATH)
 
 
-@st.cache_resource
-def load_models():
-    reg_model = joblib.load(PRICE_MODEL_PATH)
-    clf_model = joblib.load(CATEGORY_MODEL_PATH)
-    return reg_model, clf_model
+# @st.cache_resource
+# def load_models():
+#     reg_model = joblib.load(PRICE_MODEL_PATH)
+#     clf_model = joblib.load(CATEGORY_MODEL_PATH)
+#     return reg_model, clf_model
 
 
 df = load_data()
-reg_model, clf_model = load_models()
+# reg_model, clf_model = load_models()
 
 MARKET_STATS_PATH = os.path.join(BASE_DIR, "data", "market_stats.csv")
 
@@ -189,9 +189,40 @@ elif st.session_state.page == "predict":
                 "drive": drive,
                 "state": state
             }])
+            input_dict = {
+                "year": year,
+                "odometer": odometer,
+                "manufacturer": manufacturer,
+                "fuel": fuel,
+                "condition": condition,
+                "type": car_type,
+                "cylinders": cylinders,
+                "transmission": transmission,
+                "drive": drive,
+                "state": state
+            }
 
-            price_pred = reg_model.predict(user_df)[0]
-            category = clf_model.predict(user_df)[0]
+            # response = requests.post(API_URL, json=input_dict)
+            # result = response.json()
+
+            try:
+                response = requests.post(API_URL, json=input_dict, timeout=5)
+                response.raise_for_status()
+                result = response.json()
+
+                price_pred = result["predicted_price"]
+                category = result["category"]
+
+            except Exception as e:
+                st.error("Prediction service unavailable. Please try again.")
+                st.stop()
+
+
+            price_pred = result["predicted_price"]
+            category = result["category"]
+
+            # price_pred = reg_model.predict(user_df)[0]
+            # category = clf_model.predict(user_df)[0]
 
             final_price = int(price_pred)
             lower = int(price_pred * 0.85)
@@ -216,7 +247,11 @@ elif st.session_state.page == "predict":
 
             # ---- Market Comparison (Improved Fallback) ----
             st.markdown("### 📊 Market Comparison")
-
+            # similar_cars = df[
+            #     (df["manufacturer"] == manufacturer) &
+            #     (df["type"] == car_type) &
+            #     (df["year"].between(year-2, year+2))
+            # ]
             similar_cars = market_stats[
                 (market_stats["manufacturer"] == manufacturer) &
                 (market_stats["type"] == car_type)
