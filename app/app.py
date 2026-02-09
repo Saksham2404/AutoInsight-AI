@@ -14,6 +14,15 @@ st.set_page_config(
 )
 API_URL = "http://127.0.0.1:8000/predict"
 
+with st.sidebar:
+    st.markdown("### ⚡ AutoInsight")
+
+    if st.button("📜 Prediction History"):
+        st.session_state.page = "history"
+
+    if st.button("🏠 Back to Home"):
+        st.session_state.page = "home"
+
 
 # ---- Data & model loading ----
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -71,6 +80,12 @@ st.markdown("""
     margin-top:8px;
 }
 
+section[data-testid="stSidebar"] {
+    background: #020817;
+    border-right: 1px solid #1e293b;
+}
+
+            
 .metric-box {
     background:#020817;
     padding:20px;
@@ -146,6 +161,39 @@ elif st.session_state.page == "eda":
     }))
 
     st.dataframe(df.describe())
+
+# ---- Prediction History Page ----
+elif st.session_state.page == "history":
+
+    st.header("📜 Prediction History")
+
+    HISTORY_URL = "http://127.0.0.1:8000/history"
+
+    try:
+        response = requests.get(HISTORY_URL, timeout=5)
+        response.raise_for_status()
+        history_data = response.json()
+
+        if len(history_data) == 0:
+            st.info("No predictions yet.")
+        else:
+            history_df = pd.DataFrame(history_data)
+
+            history_df["predicted_price"] = history_df["predicted_price"].astype(int)
+
+            st.dataframe(
+                history_df.rename(columns={
+                    "manufacturer": "Manufacturer",
+                    "year": "Year",
+                    "odometer": "Odometer",
+                    "predicted_price": "Predicted Price",
+                    "category": "Category"
+                }),
+                use_container_width=True
+            )
+
+    except Exception as e:
+        st.error("Unable to load history. Make sure API is running.")
 
 
 # ---- PREDICTION PAGE ----
